@@ -466,7 +466,6 @@ def run():
         
         ''' inference '''
         iou_list, dice_list = [], []
-        import pdb; pdb.set_trace()
 
         if (args.skip_existing_pred and osp.exists(pred_path)):
             pass # if the pred existed, skip the inference
