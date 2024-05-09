@@ -545,11 +545,21 @@ def run():
     print('Mean Dice: ', sum(all_dice_list)/len(all_dice_list))
 
     final_dice_dict = OrderedDict()
+
+    '''
     for k, v in out_dice_all.items():
         organ = k.split('/')[-4]
         final_dice_dict[organ] = OrderedDict()
     for k, v in out_dice_all.items():
         organ = k.split('/')[-4]
+        final_dice_dict[organ][k] = v
+    '''
+
+    for k, v in out_dice_all.items():
+        path_parts = k.split(os.path.sep)
+        organ = path_parts[-4]
+        if organ not in final_dice_dict:
+            final_dice_dict[organ] = OrderedDict()
         final_dice_dict[organ][k] = v
 
     if(args.split_num>1):
