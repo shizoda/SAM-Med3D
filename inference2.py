@@ -38,7 +38,7 @@ parser.add_argument('--crop_size', type=int, default=128)
 parser.add_argument('--device', type=str, default='cuda')
 parser.add_argument('-mt', '--model_type', type=str, default='vit_b_ori')
 parser.add_argument('-nc', '--num_clicks', type=int, default=5)
-parser.add_argument('-pm', '--point_method', type=str, default='default')
+parser.add_argument('-pm', '--point_method', type=str, default='random')
 parser.add_argument('-dt', '--data_type', type=str, default='Ts')
 
 parser.add_argument('--threshold', type=int, default=0)
@@ -65,6 +65,9 @@ np.random.seed(SEED)
 
 if torch.cuda.is_available():
     torch.cuda.init()
+else:
+    print("cuda is not available")
+    args.device = 'cpu'
 
 click_methods = {
     'default': get_next_click3D_torch_ritm,
@@ -245,6 +248,7 @@ def finetune_model_predict3D(img3D, gt3D, sam_model_tune, device='cuda', click_m
     pred_list = []
     prob_list = []
 
+
     if prev_masks is None:
         prev_masks = torch.zeros_like(gt3D).to(device)
     low_res_masks = F.interpolate(prev_masks.float(), size=(args.crop_size//4,args.crop_size//4,args.crop_size//4))
@@ -283,12 +287,12 @@ def finetune_model_predict3D(img3D, gt3D, sam_model_tune, device='cuda', click_m
             medsam_seg_prob = torch.sigmoid(prev_masks)  # (B, 1, 64, 64, 64)
             # convert prob to mask
             medsam_seg_prob = medsam_seg_prob.cpu().numpy().squeeze()
-            # medsam_seg = (medsam_seg_prob > 0.5).astype(np.uint8)
+            medsam_seg = (medsam_seg_prob > 0.5).astype(np.uint8)
             # otsu thresholding
             
-            from skimage.filters import threshold_otsu
-            threshold = threshold_otsu(medsam_seg_prob)
-            medsam_seg = (medsam_seg_prob > threshold).astype(np.uint8)
+            # from skimage.filters import threshold_otsu
+            # threshold = threshold_otsu(medsam_seg_prob)
+            # medsam_seg = (medsam_seg_prob > threshold).astype(np.uint8)
             pred_list.append(medsam_seg)
             
             medsam_seg_prob = (medsam_seg_prob * 100).astype(np.uint16)

@@ -91,6 +91,7 @@ def get_next_click3D_torch_ritm(prev_seg, gt_semantic_seg):
 
 
 def get_next_click3D_torch_2(prev_seg, gt_semantic_seg):
+    
 
     mask_threshold = 0.5
 
@@ -99,9 +100,13 @@ def get_next_click3D_torch_2(prev_seg, gt_semantic_seg):
     # dice_list = []
 
     pred_masks = (prev_seg > mask_threshold)
-    true_masks = (gt_semantic_seg > 0)
-    fn_masks = torch.logical_and(true_masks, torch.logical_not(pred_masks))
-    fp_masks = torch.logical_and(torch.logical_not(true_masks), pred_masks)
+
+    # true_masks = (gt_semantic_seg > 0)
+    # fn_masks = torch.logical_and(true_masks, torch.logical_not(pred_masks))
+    # fp_masks = torch.logical_and(torch.logical_not(true_masks), pred_masks)
+
+    fn_masks = torch.logical_and(1 <= gt_semantic_seg, gt_semantic_seg <= 99)
+    fp_masks = (100 <= gt_semantic_seg)
 
     to_point_mask = torch.logical_or(fn_masks, fp_masks)
 
@@ -119,7 +124,8 @@ def get_next_click3D_torch_2(prev_seg, gt_semantic_seg):
         bl = torch.tensor([int(is_positive),]).reshape(1,1)
         batch_points.append(bp)
         batch_labels.append(bl)
-
+    
+    print(batch_points, batch_labels)
     return batch_points, batch_labels # , (sum(dice_list)/len(dice_list)).item()    
 
 
