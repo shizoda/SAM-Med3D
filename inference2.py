@@ -18,7 +18,7 @@ import numpy as np
 from collections import OrderedDict, defaultdict
 import json
 import pickle
-from utils.click_method import get_next_click3D_torch_ritm, get_next_click3D_torch_2
+from utils.click_method import get_next_click3D_torch_ritm, get_next_click3D_torch_2, reset_previous_points
 from utils.data_loader import Dataset_Union_ALL_Val
 from itertools import product
 
@@ -398,6 +398,7 @@ def save_numpy_to_nifti(in_arr: np.array, out_path, meta_info):
 
 
 def run():
+    reset_previous_points()
     all_dataset_paths = glob(join(args.test_data_path, "*", "*"))
     all_dataset_paths = list(filter(osp.isdir, all_dataset_paths))
     print("get", len(all_dataset_paths), "datasets")

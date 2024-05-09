@@ -89,10 +89,16 @@ def get_next_click3D_torch_ritm(prev_seg, gt_semantic_seg):
     return batch_points, batch_labels # , (sum(dice_list)/len(dice_list)).item()    
 
 
+previously_selected_points_pos = set()
+previously_selected_points_neg = set()
+
+def reset_previous_points():
+    global previously_selected_points_pos, previously_selected_points_neg
+    previously_selected_points_pos = set()
+    previously_selected_points_neg = set()
 
 def get_next_click3D_torch_2(prev_seg, gt_semantic_seg):
     
-
     mask_threshold = 0.5
 
     batch_points = []
@@ -107,25 +113,42 @@ def get_next_click3D_torch_2(prev_seg, gt_semantic_seg):
 
     fn_masks = torch.logical_and(1 <= gt_semantic_seg, gt_semantic_seg <= 99)
     fp_masks = (100 <= gt_semantic_seg)
-
     to_point_mask = torch.logical_or(fn_masks, fp_masks)
 
     for i in range(gt_semantic_seg.shape[0]):
-
         points = torch.argwhere(to_point_mask[i])
-        point = points[np.random.randint(len(points))]
-        # import pdb; pdb.set_trace()
-        if fn_masks[i, 0, point[1], point[2], point[3]]:
+        
+        # ポジティブとネガティブの利用可能なポイントを分けてフィルタリング
+        available_points_pos = [point for point in points if tuple(point.tolist()) not in previously_selected_points_pos and fn_masks[i, 0, point[1], point[2], point[3]]]
+        available_points_neg = [point for point in points if tuple(point.tolist()) not in previously_selected_points_neg and fp_masks[i, 0, point[1], point[2], point[3]]]
+
+        if not available_points_pos:
+            available_points_pos = [point for point in points if fn_masks[i, 0, point[1], point[2], point[3]]]
+        if not available_points_neg:
+            available_points_neg = [point for point in points if fp_masks[i, 0, point[1], point[2], point[3]]]
+        
+        # ポジティブなポイントを選択
+        if available_points_pos:
+            point = available_points_pos[np.random.randint(len(available_points_pos))]
+            previously_selected_points_pos.add(tuple(point.tolist()))
             is_positive = True
         else:
+            # ネガティブなポイントを選択
+            point = available_points_neg[np.random.randint(len(available_points_neg))]
+            previously_selected_points_neg.add(tuple(point.tolist()))
             is_positive = False
 
         bp = point[1:].clone().detach().reshape(1,1,3) 
         bl = torch.tensor([int(is_positive),]).reshape(1,1)
         batch_points.append(bp)
         batch_labels.append(bl)
-    
-    print(batch_points, batch_labels)
+ 
+    print("previously_selected_points_pos", previously_selected_points_pos)
+    print("previously_selected_points_neg", previously_selected_points_neg)
+
+    print("batch_points", batch_points)
+    print("batch_labels", batch_labels)
+
     return batch_points, batch_labels # , (sum(dice_list)/len(dice_list)).item()    
 
 
